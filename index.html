@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>账号注册</title>
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api"></script>
   <style>
     * {
       margin: 0;
@@ -93,7 +94,13 @@
     </div>
     <button id="submitBtn">立即注册</button>
     <div class="tip">已有账号？可前往登录页面</div>
-  </div>
+<div id="faceBox" style="display:none;margin-top:20px;">
+  <p>请正对镜头，进行人脸验证</p >
+  <video id="cam" autoplay playsinline width="480" height="360"></video>
+  <canvas id="overlay" style="position:absolute;"></canvas>
+  <div id="faceMsg"></div>
+</div>
+</div>
 
   <script>
     const btn = document.getElementById("submitBtn");
@@ -111,7 +118,35 @@
         alert("两次输入的密码不一样！");
         return;
       }
-      alert(`注册成功！\n用户名：${user}\n邮箱：${mail}`);
+      // 显示人脸区域
+document.getElementById('faceBox').style.display = 'block';
+
+// 获取元素
+const video = document.getElementById('cam');
+const tipEl = document.getElementById('faceTip');
+
+// 请求摄像头
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => {
+    video.srcObject = stream;
+  })
+  .catch(err => {
+    tipEl.textContent = '❌ 获取摄像头失败，请允许相机权限';
+  });
+
+// 加载模型 + 循环检测
+(async () => {
+  await faceapi.loadSsdMobilenetv1Model('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model');
+
+  setInterval(async () => {
+    const faces = await faceapi.detectAllFaces(video);
+    if (faces.length > 0) {
+      tipEl.textContent = '✅ 人脸验证通过！注册成功';
+    } else {
+      tipEl.textContent = '❌ 没检测到人脸，请正对镜头';
+    }
+  }, 800);
+})();
     };
   </script>
 </body>
